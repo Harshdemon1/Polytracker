@@ -1,5 +1,7 @@
-export default function FilterBar({ filters, onChange }) {
+export default function FilterBar({ filters, onChange, showWatchlistOnly, onToggleWatchlist }) {
     const set = (key, value) => onChange((prev) => ({ ...prev, [key]: value }));
+
+    const isDefault = !filters.category && filters.sort === 'endDate' && filters.volumeMin === 1000 && !showWatchlistOnly;
 
     return (
         <div className="filter-bar">
@@ -45,12 +47,22 @@ export default function FilterBar({ filters, onChange }) {
                 </select>
             </div>
 
-            {(filters.category || filters.sort !== 'endDate' || filters.volumeMin !== 1000) && (
+            <button
+                className={`watchlist-filter-btn ${showWatchlistOnly ? 'active' : ''}`}
+                onClick={onToggleWatchlist}
+            >
+                {showWatchlistOnly ? '★ My Watchlist' : '☆ My Watchlist'}
+            </button>
+
+            {!isDefault && (
                 <button
                     className="filter-clear"
-                    onClick={() => onChange({ category: '', sort: 'endDate', volumeMin: 1000 })}
+                    onClick={() => {
+                        onChange({ category: '', sort: 'endDate', volumeMin: 1000 });
+                        if (showWatchlistOnly) onToggleWatchlist();
+                    }}
                 >
-                    Clear Filters
+                    Clear All Filters
                 </button>
             )}
         </div>
