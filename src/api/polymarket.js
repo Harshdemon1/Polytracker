@@ -1,38 +1,39 @@
 import axios from 'axios';
-
 // In development, requests go through the Vite proxy (/api → https://gamma-api.polymarket.com)
 // to avoid CORS issues.
 const BASE_URL = '/api';
 const CLOB_URL = '/clob'; // Proxied to https://clob.polymarket.com
-
 const client = axios.create({
     baseURL: BASE_URL,
     timeout: 15000,
     headers: { 'Content-Type': 'application/json' },
 });
-
 const clobClient = axios.create({
     baseURL: CLOB_URL,
     timeout: 15000,
     headers: { 'Content-Type': 'application/json' },
 });
-
 export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
     const params = {
         limit,
         active: true,
         closed: false,
+        archived: false,        // exclude deleted/archived markets
+        enableOrderBook: true,  // only live, tradeable markets visible on Polymarket
     };
-
     if (volumeMin > 0) {
         params.volume_num_min = volumeMin;
     }
-
     const { data } = await client.get('/markets', { params });
     const markets = Array.isArray(data) ? data : (data?.data ?? []);
-
     return markets
-        .filter((m) => !m.closed && m.endDate && new Date(m.endDate) > new Date())
+        .filter((m) => {
+            if (m.closed) return false;
+            if (m.archived) return false;
+            if (!m.enableOrderBook) return false;  // drop non-tradeable markets
+            if (!m.endDate || new Date(m.endDate) <= new Date()) return false;
+            return true;
+        })
         .map((m) => ({
             id: m.id ?? m.slug,
             question: m.question,
@@ -51,7 +52,6 @@ export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
         }))
         .sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
 }
-
 function parseClobTokenIds(market) {
     try {
         // The API returns clobTokenIds as a JSON-encoded string: "[\"123...\", \"456...\"]"
@@ -71,7 +71,6 @@ function parseClobTokenIds(market) {
         return [];
     }
 }
-
 /**
  * Fetches price history for a market token from Polymarket CLOB API.
  * Returns array of { t: timestamp, p: price } objects.
@@ -93,7 +92,6 @@ export async function fetchPriceHistory(tokenId, fidelity = 60) {
         return [];
     }
 }
-
 function parseOutcomes(market) {
     try {
         const prices = market.outcomePrices
