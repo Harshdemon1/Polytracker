@@ -37,7 +37,7 @@ export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
         .map((m) => ({
             id: m.id ?? m.slug,
             question: m.question,
-            slug: m.slug,
+            slug: m.events?.[0]?.slug ?? m.slug, // use event slug for correct Polymarket URL
             endDate: m.endDate,
             volume: m.volumeNum ?? parseFloat(m.volume) ?? 0,
             liquidity: m.liquidityNum ?? parseFloat(m.liquidity) ?? 0,
