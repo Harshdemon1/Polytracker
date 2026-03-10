@@ -7,25 +7,39 @@ import './App.css';
 
 const REFRESH_INTERVAL = 60000;
 
-// Polymarket logo SVG (official mark)
 const PolytrackерLogo = () => (
-  <svg width="32" height="32" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round">
-    <polyline points="30,5 5,5 5,105 30,105 75,55" />
-    <polyline points="30,20 60,40 30,55" />
-    <polyline points="30,55 60,70 30,88" />
+  <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M15,8 Q12,8 10,11 L5,89 Q4,93 7,95 L72,92 Q76,92 78,88 L85,12 Q86,8 82,6 Z"
+      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" fill="none"
+    />
+    <polyline
+      points="18,18 68,45 18,50"
+      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none"
+    />
+    <polyline
+      points="18,50 68,55 18,82"
+      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none"
+    />
   </svg>
 );
 
-// Moon/Sun icons for theme toggle
 const MoonIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
     <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
   </svg>
 );
 const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="12" cy="12" r="5" />
-    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="5" />
+    <line x1="12" y1="19" x2="12" y2="22" />
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
+    <line x1="2" y1="12" x2="5" y2="12" />
+    <line x1="19" y1="12" x2="22" y2="12" />
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
   </svg>
 );
 
@@ -49,13 +63,11 @@ export default function App() {
   });
   const timerRef = useRef(null);
 
-  // Apply dark/light mode to root
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     try { localStorage.setItem('polytracker_theme', darkMode ? 'dark' : 'light'); } catch { }
   }, [darkMode]);
 
-  // Persist watchlist
   useEffect(() => {
     try { localStorage.setItem('polytracker_watchlist', JSON.stringify([...watchlist])); } catch { }
   }, [watchlist]);
