@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// In development, requests go through the Vite proxy (/api → https://gamma-api.polymarket.com)
-// to avoid CORS issues.
 const BASE_URL = '/api';
-const CLOB_URL = '/clob'; // Proxied to https://clob.polymarket.com
+const CLOB_URL = '/clob';
 
 const client = axios.create({
     baseURL: BASE_URL,
@@ -24,15 +22,27 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
         active: true,
         closed: false,
         archived: false,
-        enableOrderBook: true,
+        order: 'volume_24hr',
+        ascending: false,
     };
 
     if (volumeMin > 0) {
         params.volume_num_min = volumeMin;
     }
 
-    const { data } = await client.get('/markets', { params });
-    const markets = Array.isArray(data) ? data : (data?.data ?? []);
+    // Use /events endpoint — it returns events with nested markets,
+    // and supports correct sorting by volume_24hr (Trending tab)
+    const { data } = await client.get('/events', { params });
+    const events = Array.isArray(data) ? data : (data?.data ?? []);
+
+    // Flatten: extract all markets from all events
+    const markets = [];
+    for (const event of events) {
+        const eventMarkets = Array.isArray(event.markets) ? event.markets : [];
+        for (const m of eventMarkets) {
+            markets.push({ ...m, _event: event });
+        }
+    }
 
     return markets
         .filter((m) => {
@@ -45,33 +55,30 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
         .map((m) => ({
             id: m.id ?? m.slug,
             question: m.question,
-            slug: m.events?.[0]?.slug ?? m.slug,
+            slug: m._event?.slug ?? m.slug,
             endDate: m.endDate,
             volume: m.volumeNum ?? parseFloat(m.volume) ?? 0,
-            volume24hr: m.volume24hr ?? 0,
+            volume24hr: m._event?.volume24hr ?? m.volume24hr ?? 0,
             liquidity: m.liquidityNum ?? parseFloat(m.liquidity) ?? 0,
             outcomes: parseOutcomes(m),
-            categories: m.tags ?? m.categories ?? [],
-            image: m.image ?? null,
+            categories: m._event?.tags ?? m.tags ?? m.categories ?? [],
+            image: m._event?.image ?? m.image ?? null,
             clobTokenIds: parseClobTokenIds(m),
             conditionId: m.conditionId ?? null,
             priceChange1d: m.oneDayPriceChange ?? null,
             priceChange1h: m.oneHourPriceChange ?? null,
             lastTradePrice: m.lastTradePrice ?? null,
-        }))
-        .sort((a, b) => b.volume - a.volume);
+        }));
 }
 
 function parseClobTokenIds(market) {
     try {
-        // The API returns clobTokenIds as a JSON-encoded string: "[\"123...\", \"456...\"]"
         if (market.clobTokenIds) {
             const ids = typeof market.clobTokenIds === 'string'
                 ? JSON.parse(market.clobTokenIds)
                 : market.clobTokenIds;
             if (Array.isArray(ids) && ids.length > 0) return ids.filter(Boolean);
         }
-        // Fallback: tokens array with token_id field
         if (market.tokens) {
             const tokens = typeof market.tokens === 'string' ? JSON.parse(market.tokens) : market.tokens;
             if (Array.isArray(tokens)) return tokens.map(t => t.token_id ?? t.tokenId ?? t.id).filter(Boolean);
@@ -82,10 +89,6 @@ function parseClobTokenIds(market) {
     }
 }
 
-/**
- * Fetches price history for a market token from Polymarket CLOB API.
- * Returns array of { t: timestamp, p: price } objects.
- */
 export async function fetchPriceHistory(tokenId, fidelity = 60) {
     if (!tokenId) return [];
     try {
@@ -96,7 +99,6 @@ export async function fetchPriceHistory(tokenId, fidelity = 60) {
                 fidelity,
             }
         });
-        // API returns { history: [{t, p}, ...] }
         const history = data?.history ?? data ?? [];
         return Array.isArray(history) ? history : [];
     } catch {
