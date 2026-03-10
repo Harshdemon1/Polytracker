@@ -7,15 +7,6 @@ import './App.css';
 
 const REFRESH_INTERVAL = 60000;
 
-// Polymarket logo SVG (official mark)
-const PolymarketLogo = () => (
-  <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="32" height="32" rx="8" fill="#0d0d0d" />
-    <path d="M8 22V10h5.5c3.038 0 5 1.791 5 4.5S16.538 19 13.5 19H11v3H8zm3-6h2.4c1.38 0 2.1-.64 2.1-1.5S14.78 13 13.4 13H11v3zM19.5 22V14h2.7v1.2c.5-.85 1.4-1.35 2.55-1.35.2 0 .4.02.55.05v2.6a3.3 3.3 0 00-.7-.07c-1.35 0-2.4.8-2.4 2.4V22h-2.7z" fill="#fff" />
-  </svg>
-);
-
-// Moon/Sun icons for theme toggle
 const MoonIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
     <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
@@ -48,13 +39,11 @@ export default function App() {
   });
   const timerRef = useRef(null);
 
-  // Apply dark/light mode to root
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     try { localStorage.setItem('polytracker_theme', darkMode ? 'dark' : 'light'); } catch { }
   }, [darkMode]);
 
-  // Persist watchlist
   useEffect(() => {
     try { localStorage.setItem('polytracker_watchlist', JSON.stringify([...watchlist])); } catch { }
   }, [watchlist]);
@@ -120,7 +109,8 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <img src="/logo.png" alt="Polytracker" height="40" style={{ display: 'block', borderRadius: '6px' }} />
+            <img src="/favicon.png" alt="Polytracker" height="36" style={{ display: 'block', borderRadius: '6px' }} />
+            <h1 className="brand-title">Polytracker</h1>
             <span className="brand-badge">LIVE</span>
           </div>
           <div className="header-meta">
