@@ -125,6 +125,7 @@ a { color: inherit; text-decoration: none; }
 .header-meta { display: flex; align-items: center; gap: 12px; }
 .last-updated { font-size: 0.78rem; color: var(--muted); }
 
+/* Theme Toggle */
 .theme-toggle {
   display: flex;
   align-items: center;
@@ -146,20 +147,26 @@ a { color: inherit; text-decoration: none; }
   color: var(--accent2);
 }
 
+/* --- UPDATED REFRESH BUTTON (MATCHING THEME-TOGGLE) --- */
 .refresh-btn {
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--accent2);
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
   padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.refresh-btn:hover { background: rgba(99, 102, 241, 0.22); }
+.refresh-btn:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
 .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Main ─────────────────────────────────────────────────── */
@@ -212,6 +219,7 @@ a { color: inherit; text-decoration: none; }
 .filter-select:focus { border-color: var(--accent); }
 .filter-select option { background: var(--surface2); }
 
+/* Watchlist Button */
 .watchlist-filter-btn {
   font-family: inherit;
   font-size: 0.82rem;
@@ -234,21 +242,26 @@ a { color: inherit; text-decoration: none; }
   border-color: rgba(234, 179, 8, 0.4);
 }
 
+/* --- UPDATED CLEAR ALL FILTERS BUTTON --- */
 .filter-clear {
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--muted);
-  background: transparent;
+  background: var(--surface2);
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   margin-top: auto;
 }
 
-.filter-clear:hover { color: var(--text); border-color: var(--muted); }
+.filter-clear:hover {
+  color: var(--yellow);
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.1);
+}
 
 /* ── Market Grid ──────────────────────────────────────────── */
 .market-grid {
@@ -360,7 +373,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--text);
 }
 
-/* ── Outcomes ─────────────────────────────────────────────── */
+/* Outcomes */
 .card-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .outcome-pill {
