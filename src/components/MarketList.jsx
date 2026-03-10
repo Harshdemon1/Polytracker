@@ -38,17 +38,25 @@ export default function MarketList({
 
             {canLoadMore && (
                 <div className="load-more-container">
+                    <div className="load-more-track">
+                        <div
+                            className="load-more-progress"
+                            style={{ width: `${Math.round((totalLoaded / maxMarkets) * 100)}%` }}
+                        />
+                    </div>
+                    <p className="load-more-count">{totalLoaded} of {maxMarkets} markets loaded</p>
                     <button
                         className="load-more-btn"
                         onClick={onLoadMore}
                         disabled={loadingMore}
                     >
                         {loadingMore ? (
-                            <>
-                                <span className="spinner-sm" /> Loading…
-                            </>
+                            <span className="load-more-loading">
+                                <span className="spinner-sm" />
+                                Loading more markets…
+                            </span>
                         ) : (
-                            `Load More Markets (${totalLoaded} / ${maxMarkets})`
+                            '+ Load More Markets'
                         )}
                     </button>
                 </div>
@@ -56,7 +64,10 @@ export default function MarketList({
 
             {!canLoadMore && (
                 <div className="load-more-container">
-                    <p className="load-more-end">All {maxMarkets} top markets loaded</p>
+                    <div className="load-more-track">
+                        <div className="load-more-progress" style={{ width: '100%' }} />
+                    </div>
+                    <p className="load-more-count">All {maxMarkets} top markets loaded ✓</p>
                 </div>
             )}
         </>
