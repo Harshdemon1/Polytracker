@@ -25,8 +25,6 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
         closed: false,
         archived: false,
         enableOrderBook: true,
-        order: 'volume_num',
-        ascending: false,
     };
 
     if (volumeMin > 0) {
@@ -60,7 +58,8 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
             priceChange1d: m.oneDayPriceChange ?? null,
             priceChange1h: m.oneHourPriceChange ?? null,
             lastTradePrice: m.lastTradePrice ?? null,
-        }));
+        }))
+        .sort((a, b) => b.volume - a.volume);
 }
 
 function parseClobTokenIds(market) {
