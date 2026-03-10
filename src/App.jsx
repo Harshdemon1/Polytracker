@@ -79,6 +79,9 @@ export default function App() {
 
   useEffect(() => {
     let result = [...markets];
+    if (filters.volumeMin > 0) {
+      result = result.filter(m => m.volume >= filters.volumeMin);
+    }
     if (showWatchlistOnly) {
       result = result.filter(m => watchlist.has(m.id));
     }
