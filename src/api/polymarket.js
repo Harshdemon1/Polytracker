@@ -17,11 +17,16 @@ const clobClient = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
-export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
+export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = {}) {
     const params = {
         limit,
+        offset,
         active: true,
         closed: false,
+        archived: false,
+        enableOrderBook: true,
+        order: 'volume_num',
+        ascending: false,
     };
 
     if (volumeMin > 0) {
@@ -32,13 +37,20 @@ export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
     const markets = Array.isArray(data) ? data : (data?.data ?? []);
 
     return markets
-        .filter((m) => !m.closed && m.endDate && new Date(m.endDate) > new Date())
+        .filter((m) => {
+            if (m.closed) return false;
+            if (m.archived) return false;
+            if (!m.enableOrderBook) return false;
+            if (!m.endDate || new Date(m.endDate) <= new Date()) return false;
+            return true;
+        })
         .map((m) => ({
             id: m.id ?? m.slug,
             question: m.question,
             slug: m.events?.[0]?.slug ?? m.slug,
             endDate: m.endDate,
             volume: m.volumeNum ?? parseFloat(m.volume) ?? 0,
+            volume24hr: m.volume24hr ?? 0,
             liquidity: m.liquidityNum ?? parseFloat(m.liquidity) ?? 0,
             outcomes: parseOutcomes(m),
             categories: m.tags ?? m.categories ?? [],
@@ -48,8 +60,7 @@ export async function fetchMarkets({ limit = 100, volumeMin = 0 } = {}) {
             priceChange1d: m.oneDayPriceChange ?? null,
             priceChange1h: m.oneHourPriceChange ?? null,
             lastTradePrice: m.lastTradePrice ?? null,
-        }))
-        .sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+        }));
 }
 
 function parseClobTokenIds(market) {
