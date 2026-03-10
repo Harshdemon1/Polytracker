@@ -6,6 +6,7 @@ import MarketModal from './components/MarketModal';
 import './App.css';
 
 const REFRESH_INTERVAL = 60000;
+const MAX_MARKETS = 1000;
 
 // Polymarket logo SVG (official mark)
 const PolymarketLogo = () => (
@@ -32,9 +33,11 @@ export default function App() {
   const [markets, setMarkets] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [filters, setFilters] = useState({ category: '', sort: 'endDate', volumeMin: 1000 });
+  const [offset, setOffset] = useState(0);
+  const [filters, setFilters] = useState({ category: '', sort: 'volume', volumeMin: 1000 });
   const [watchlist, setWatchlist] = useState(() => {
     try {
       const saved = localStorage.getItem('polytracker_watchlist');
@@ -59,10 +62,12 @@ export default function App() {
     try { localStorage.setItem('polytracker_watchlist', JSON.stringify([...watchlist])); } catch { }
   }, [watchlist]);
 
+  // Initial load and auto-refresh (always fetches from offset 0, limit = current count to preserve scroll position)
   const load = useCallback(async () => {
     try {
       setError(null);
-      const data = await fetchMarkets({ limit: 100, volumeMin: filters.volumeMin });
+      const currentCount = Math.max(100, markets.length);
+      const data = await fetchMarkets({ limit: currentCount, offset: 0, volumeMin: filters.volumeMin });
       setMarkets(data);
       setLastUpdated(new Date());
     } catch (e) {
@@ -70,14 +75,54 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }, [filters.volumeMin, markets.length]);
+
+  // Load More: fetch next 100 and append
+  const loadMore = useCallback(async () => {
+    if (loadingMore || markets.length >= MAX_MARKETS) return;
+    try {
+      setLoadingMore(true);
+      setError(null);
+      const newOffset = offset + 100;
+      const data = await fetchMarkets({ limit: 100, offset: newOffset, volumeMin: filters.volumeMin });
+      setMarkets(prev => {
+        // Deduplicate by id in case of overlap
+        const existingIds = new Set(prev.map(m => m.id));
+        const fresh = data.filter(m => !existingIds.has(m.id));
+        return [...prev, ...fresh];
+      });
+      setOffset(newOffset);
+    } catch (e) {
+      setError(e.message || 'Failed to load more markets');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, markets.length, offset, filters.volumeMin]);
+
+  useEffect(() => {
+    setLoading(true);
+    setOffset(0);
+    setMarkets([]);
   }, [filters.volumeMin]);
 
   useEffect(() => {
-    load();
+    if (loading) {
+      fetchMarkets({ limit: 100, offset: 0, volumeMin: filters.volumeMin })
+        .then(data => {
+          setMarkets(data);
+          setLastUpdated(new Date());
+        })
+        .catch(e => setError(e.message || 'Failed to fetch markets'))
+        .finally(() => setLoading(false));
+    }
+  }, [loading, filters.volumeMin]);
+
+  useEffect(() => {
     timerRef.current = setInterval(load, REFRESH_INTERVAL);
     return () => clearInterval(timerRef.current);
   }, [load]);
 
+  // Filter and sort
   useEffect(() => {
     let result = [...markets];
     if (showWatchlistOnly) {
@@ -94,9 +139,10 @@ export default function App() {
     }
     if (filters.sort === 'volume') {
       result.sort((a, b) => b.volume - a.volume);
-    } else if (filters.sort === 'liquidity') {
-      result.sort((a, b) => b.liquidity - a.liquidity);
+    } else if (filters.sort === 'trending') {
+      result.sort((a, b) => b.volume24hr - a.volume24hr);
     } else {
+      // endDate ascending
       result.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
     }
     setFiltered(result);
@@ -170,6 +216,10 @@ export default function App() {
             watchlist={watchlist}
             onToggleWatchlist={toggleWatchlist}
             onOpenModal={setSelectedMarket}
+            onLoadMore={loadMore}
+            loadingMore={loadingMore}
+            totalLoaded={markets.length}
+            maxMarkets={MAX_MARKETS}
           />
         )}
       </main>
