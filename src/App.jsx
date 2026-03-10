@@ -1,4 +1,3 @@
-import logoImg from './assets/logo.png';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchMarkets } from './api/polymarket';
 import MarketList from './components/MarketList';
@@ -117,7 +116,7 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <img src={logoImg} alt="Polytracker" height="32" style={{ display: 'block' }} />
+            <img src="/logo.png" alt="Polytracker" height="32" style={{ display: 'block' }} />
             <h1 className="brand-title">Polytracker</h1>
             <span className="brand-badge">LIVE</span>
           </div>
