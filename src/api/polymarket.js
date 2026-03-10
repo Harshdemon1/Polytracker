@@ -25,8 +25,8 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
         closed: false,
         archived: false,
         enableOrderBook: true,
-        _sort: 'volume_num',
-        _order: 'desc',
+        order: 'volume_num',
+        ascending: false,
     };
 
     if (volumeMin > 0) {
@@ -44,7 +44,6 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
             if (!m.endDate || new Date(m.endDate) <= new Date()) return false;
             return true;
         })
-        .sort((a, b) => (b.volumeNum ?? 0) - (a.volumeNum ?? 0))
         .map((m) => ({
             id: m.id ?? m.slug,
             question: m.question,
