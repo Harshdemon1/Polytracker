@@ -12,7 +12,7 @@
 /* ── Dark Theme (default) ─────────────────────────────────── */
 :root,
 [data-theme="dark"] {
-  --bg: #0a0e1a;
+  --bg: #0a0a0a;
   --surface: #111827;
   --surface2: #1a2235;
   --surface3: #222d42;
