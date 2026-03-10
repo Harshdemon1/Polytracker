@@ -1,3 +1,4 @@
+import logoImg from './assets/logo.png';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchMarkets } from './api/polymarket';
 import MarketList from './components/MarketList';
@@ -6,23 +7,6 @@ import MarketModal from './components/MarketModal';
 import './App.css';
 
 const REFRESH_INTERVAL = 60000;
-
-const PolytrackерLogo = () => (
-  <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M15,8 Q12,8 10,11 L5,89 Q4,93 7,95 L72,92 Q76,92 78,88 L85,12 Q86,8 82,6 Z"
-      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" fill="none"
-    />
-    <polyline
-      points="18,18 68,45 18,50"
-      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none"
-    />
-    <polyline
-      points="18,50 68,55 18,82"
-      stroke="currentColor" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none"
-    />
-  </svg>
-);
 
 const MoonIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -133,7 +117,7 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <PolytrackерLogo />
+            <img src={logoImg} alt="Polytracker" height="32" style={{ display: 'block' }} />
             <h1 className="brand-title">Polytracker</h1>
             <span className="brand-badge">LIVE</span>
           </div>
