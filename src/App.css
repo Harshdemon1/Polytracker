@@ -147,23 +147,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 .refresh-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text2);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
+  color: var(--accent2);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 6px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.refresh-btn:hover { background: var(--surface3); border-color: var(--accent); color: var(--accent2); }
+.refresh-btn:hover { background: rgba(99, 102, 241, 0.22); }
 .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Main ─────────────────────────────────────────────────── */
@@ -240,24 +236,19 @@ a { color: inherit; text-decoration: none; }
 
 .filter-clear {
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text2);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
 }
 
-.filter-clear:hover { background: var(--surface3); border-color: var(--accent); color: var(--accent2); }
+.filter-clear:hover { color: var(--text); border-color: var(--muted); }
 
 /* ── Market Grid ──────────────────────────────────────────── */
 .market-grid {
