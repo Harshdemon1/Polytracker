@@ -148,18 +148,26 @@ a { color: inherit; text-decoration: none; }
 
 .refresh-btn {
   font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--accent2);
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 1rem;
+  padding: 0;
 }
 
-.refresh-btn:hover { background: rgba(99, 102, 241, 0.22); }
+.refresh-btn:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
 .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Main ─────────────────────────────────────────────────── */
@@ -236,12 +244,12 @@ a { color: inherit; text-decoration: none; }
 
 .filter-clear {
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--muted);
   background: transparent;
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
