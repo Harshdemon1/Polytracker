@@ -5,8 +5,6 @@ export default function MarketList({
     watchlist,
     onToggleWatchlist,
     onOpenModal,
-    onLoadMore,
-    loadingMore,
     totalLoaded,
     maxMarkets,
 }) {
@@ -19,8 +17,6 @@ export default function MarketList({
             </div>
         );
     }
-
-    const canLoadMore = totalLoaded < maxMarkets;
 
     return (
         <>
@@ -36,33 +32,7 @@ export default function MarketList({
                 ))}
             </div>
 
-            {canLoadMore && (
-                <div className="load-more-container">
-                    <div className="load-more-track">
-                        <div
-                            className="load-more-progress"
-                            style={{ width: `${Math.round((totalLoaded / maxMarkets) * 100)}%` }}
-                        />
-                    </div>
-                    <p className="load-more-count">{totalLoaded} of {maxMarkets} markets loaded</p>
-                    <button
-                        className="load-more-btn"
-                        onClick={onLoadMore}
-                        disabled={loadingMore}
-                    >
-                        {loadingMore ? (
-                            <span className="load-more-loading">
-                                <span className="spinner-sm" />
-                                Loading more markets…
-                            </span>
-                        ) : (
-                            '+ Load More Markets'
-                        )}
-                    </button>
-                </div>
-            )}
-
-            {!canLoadMore && (
+            {totalLoaded >= maxMarkets && (
                 <div className="load-more-container">
                     <div className="load-more-track">
                         <div className="load-more-progress" style={{ width: '100%' }} />
