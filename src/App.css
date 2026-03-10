@@ -1,188 +1,681 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchMarkets } from './api/polymarket';
-import MarketList from './components/MarketList';
-import FilterBar from './components/FilterBar';
-import MarketModal from './components/MarketModal';
-import './App.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-const REFRESH_INTERVAL = 60000;
+/* ── Reset & Base ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-// Moon/Sun icons for theme toggle
-const MoonIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
-  </svg>
-);
-const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="4" />
-    <line x1="12" y1="2" x2="12" y2="5" />
-    <line x1="12" y1="19" x2="12" y2="22" />
-    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
-    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
-    <line x1="2" y1="12" x2="5" y2="12" />
-    <line x1="19" y1="12" x2="22" y2="12" />
-    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
-    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
-  </svg>
-);
+/* ── Dark Theme (default) ─────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --surface: #0f0f0f;
+  --surface2: #141414;
+  --surface3: #1a1a1a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border2: rgba(255, 255, 255, 0.14);
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --cyan: #00e5c3;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --text: #f1f5f9;
+  --text2: #cbd5e1;
+  --muted: #64748b;
+  --radius: 14px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --header-bg: #0a0a0a;
+  --modal-bg: #0f0f0f;
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+}
 
-export default function App() {
-  const [markets, setMarkets] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [filters, setFilters] = useState({ category: '', sort: 'endDate', volumeMin: 1000 });
-  const [watchlist, setWatchlist] = useState(() => {
-    try {
-      const saved = localStorage.getItem('polytracker_watchlist');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
-  });
-  const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState(null);
-  const [darkMode, setDarkMode] = useState(() => {
-    try { return localStorage.getItem('polytracker_theme') !== 'light'; } catch { return true; }
-  });
-  const timerRef = useRef(null);
+/* ── Light Theme ──────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --surface3: #e2e8f0;
+  --border: rgba(0, 0, 0, 0.08);
+  --border2: rgba(0, 0, 0, 0.14);
+  --accent: #4f46e5;
+  --accent2: #6366f1;
+  --cyan: #0891b2;
+  --green: #16a34a;
+  --yellow: #ca8a04;
+  --red: #dc2626;
+  --text: #0f172a;
+  --text2: #334155;
+  --muted: #64748b;
+  --header-bg: rgba(240, 244, 248, 0.92);
+  --modal-bg: #ffffff;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+}
 
-  // Apply dark/light mode to root
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    try { localStorage.setItem('polytracker_theme', darkMode ? 'dark' : 'light'); } catch { }
-  }, [darkMode]);
+html { scroll-behavior: smooth; }
 
-  // Persist watchlist
-  useEffect(() => {
-    try { localStorage.setItem('polytracker_watchlist', JSON.stringify([...watchlist])); } catch { }
-  }, [watchlist]);
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+  transition: background 0.3s, color 0.3s;
+}
 
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await fetchMarkets({ limit: 100, volumeMin: filters.volumeMin });
-      setMarkets(data);
-      setLastUpdated(new Date());
-    } catch (e) {
-      setError(e.message || 'Failed to fetch markets');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters.volumeMin]);
+a { color: inherit; text-decoration: none; }
 
-  useEffect(() => {
-    load();
-    timerRef.current = setInterval(load, REFRESH_INTERVAL);
-    return () => clearInterval(timerRef.current);
-  }, [load]);
+/* ── Layout ───────────────────────────────────────────────── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
 
-  useEffect(() => {
-    let result = [...markets];
-    if (showWatchlistOnly) {
-      result = result.filter(m => watchlist.has(m.id));
-    }
-    if (filters.category) {
-      result = result.filter((m) =>
-        m.categories.some((c) =>
-          (typeof c === 'string' ? c : c?.label ?? c?.name ?? '')
-            .toLowerCase()
-            .includes(filters.category.toLowerCase())
-        )
-      );
-    }
-    if (filters.sort === 'volume') {
-      result.sort((a, b) => b.volume - a.volume);
-    } else if (filters.sort === 'liquidity') {
-      result.sort((a, b) => b.liquidity - a.liquidity);
-    } else {
-      result.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
-    }
-    setFiltered(result);
-  }, [markets, filters, showWatchlistOnly, watchlist]);
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  transition: background 0.3s;
+}
 
-  const toggleWatchlist = useCallback((id) => {
-    setWatchlist(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
 
-  const toggleWatchlistView = useCallback(() => {
-    setShowWatchlistOnly(v => !v);
-  }, []);
+.brand { display: flex; align-items: center; gap: 10px; }
 
-  return (
-    <div className="app">
-      <header className="header">
-        <div className="header-inner">
-          <div className="brand">
-            <img src="/favicon.png" alt="Polytracker" height="32" style={{ display: 'block', borderRadius: '6px' }} />
-            <h1 className="brand-title">Polytracker</h1>
-            <span className="brand-badge">LIVE</span>
-          </div>
-          <div className="header-meta">
-            {lastUpdated && (
-              <span className="last-updated">
-                Updated {lastUpdated.toLocaleTimeString()}
-              </span>
-            )}
-            <button
-              className="theme-toggle"
-              onClick={() => setDarkMode(v => !v)}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle theme"
-            >
-              {darkMode ? <SunIcon /> : <MoonIcon />}
-            </button>
-            <button className="refresh-btn" onClick={load} disabled={loading} title="Refresh">
-              ⟳
-            </button>
-          </div>
-        </div>
-      </header>
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: -0.01em;
+}
 
-      <main className="main">
-        <FilterBar
-          filters={filters}
-          onChange={setFilters}
-          showWatchlistOnly={showWatchlistOnly}
-          onToggleWatchlist={toggleWatchlistView}
-        />
+[data-theme="dark"] .brand-title { color: #ffffff; }
 
-        {error && (
-          <div className="error-banner">
-            ⚠️ {error} &mdash; <button onClick={load}>Retry</button>
-          </div>
-        )}
+.brand-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 2px 7px;
+  border-radius: 99px;
+  animation: pulse 2s ease-in-out infinite;
+}
 
-        {loading && markets.length === 0 ? (
-          <div className="loading-state">
-            <div className="spinner" />
-            <p>Fetching markets from Polymarket…</p>
-          </div>
-        ) : (
-          <MarketList
-            markets={filtered}
-            watchlist={watchlist}
-            onToggleWatchlist={toggleWatchlist}
-            onOpenModal={setSelectedMarket}
-          />
-        )}
-      </main>
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
 
-      <footer className="footer">
-        <p>Data sourced from <a href="https://polymarket.com" target="_blank" rel="noreferrer">Polymarket</a> · Auto-refreshes every 60s</p>
-      </footer>
+.header-meta { display: flex; align-items: center; gap: 12px; }
+.last-updated { font-size: 0.78rem; color: var(--muted); }
 
-      {selectedMarket && (
-        <MarketModal
-          market={selectedMarket}
-          onClose={() => setSelectedMarket(null)}
-        />
-      )}
-    </div>
-  );
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.theme-toggle:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+.refresh-btn {
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+  padding: 0;
+}
+
+.refresh-btn:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+.refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Main ─────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+/* ── Filter Bar ───────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 6px; }
+
+.filter-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.filter-input,
+.filter-select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 160px;
+}
+
+.filter-input:focus,
+.filter-select:focus { border-color: var(--accent); }
+.filter-select option { background: var(--surface2); }
+
+.watchlist-filter-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+  white-space: nowrap;
+}
+
+.watchlist-filter-btn:hover { color: var(--yellow); border-color: rgba(234, 179, 8, 0.4); }
+.watchlist-filter-btn.active {
+  color: var(--yellow);
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.filter-clear {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.filter-clear:hover { color: var(--text); border-color: var(--muted); }
+
+/* ── Market Grid ──────────────────────────────────────────── */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+/* ── Market Card ──────────────────────────────────────────── */
+.market-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.market-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 36px rgba(99, 102, 241, 0.18);
+}
+
+.market-card-watchlisted { border-color: rgba(234, 179, 8, 0.35); }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-categories { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+
+.category-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 9px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.card-countdown {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--yellow);
+  white-space: nowrap;
+}
+
+.watchlist-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--muted);
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.2s, transform 0.15s;
+}
+
+.watchlist-btn:hover { color: var(--yellow); transform: scale(1.2); }
+.watchlist-btn.watchlisted { color: var(--yellow); }
+
+.card-question {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Sparkline ────────────────────────────────────────────── */
+.sparkline-wrapper { width: 100%; height: 44px; margin: 2px 0; }
+
+.sparkline-placeholder {
+  width: 100%;
+  height: 44px;
+  background: var(--surface2);
+  border-radius: 6px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.sparkline-tooltip {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* ── Outcomes ─────────────────────────────────────────────── */
+.card-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.outcome-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex: 1;
+  min-width: 80px;
+  justify-content: space-between;
+}
+
+.outcome-high { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #86efac; }
+.outcome-mid { background: rgba(234, 179, 8, 0.10); border: 1px solid rgba(234, 179, 8, 0.3); color: #fde68a; }
+.outcome-low { background: rgba(239, 68, 68, 0.10); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+
+.outcome-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.outcome-pct { font-size: 0.9rem; font-weight: 700; }
+
+/* ── Card Footer ──────────────────────────────────────────── */
+.card-footer {
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.card-stat { display: flex; flex-direction: column; gap: 2px; }
+
+.stat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+
+/* 24h change — color only, no background */
+.stat-change { font-size: 0.88rem; font-weight: 700; background: none; padding: 0; }
+.stat-change.change-up { color: var(--green); background: none; }
+.stat-change.change-down { color: var(--red); background: none; }
+
+/* change-up/down with background only inside modal */
+.modal-change.change-up { color: var(--green); background: rgba(34, 197, 94, 0.12); }
+.modal-change.change-down { color: var(--red); background: rgba(239, 68, 68, 0.12); }
+
+/* ── States ───────────────────────────────────────────────── */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 320px;
+  color: var(--muted);
+}
+
+.empty-icon { font-size: 3rem; }
+.empty-title { font-size: 1.2rem; font-weight: 700; color: var(--text2); }
+.empty-sub { font-size: 0.88rem; color: var(--muted); text-align: center; }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+}
+
+.error-banner button {
+  font-family: inherit;
+  font-weight: 600;
+  color: #fca5a5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+.footer a { color: var(--accent2); }
+.footer a:hover { text-decoration: underline; }
+
+/* ── Market Modal ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--modal-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-panel {
+  background: var(--modal-bg);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 740px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(32px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 24px 0;
+}
+
+.modal-header-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.modal-categories { display: flex; gap: 6px; flex-wrap: wrap; }
+.modal-title { font-size: 1.15rem; font-weight: 700; line-height: 1.4; color: var(--text); }
+.modal-meta { display: flex; align-items: center; gap: 10px; }
+.modal-prob { font-size: 1.6rem; font-weight: 800; color: var(--cyan); letter-spacing: -0.02em; }
+
+.modal-change {
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.modal-close {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { color: var(--text); background: var(--surface3); }
+.modal-chart-area { padding: 16px 24px 0; }
+
+.modal-chart-loading,
+.modal-chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 280px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.modal-time-tabs {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  padding: 10px 0 4px;
+}
+
+.time-tab {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.time-tab:hover { color: var(--text); background: var(--surface2); }
+.time-tab.active { color: var(--cyan); background: rgba(0, 229, 195, 0.1); border-color: rgba(0, 229, 195, 0.3); }
+
+.modal-outcomes-table { padding: 16px 24px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.modal-outcome-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.moutcome-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.moutcome-label { font-size: 0.9rem; font-weight: 600; flex: 1; color: var(--text2); }
+.moutcome-pct { font-size: 1rem; font-weight: 800; color: var(--text); }
+
+.modal-stats {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  align-items: center;
+}
+
+.modal-stat { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 100px; }
+.modal-stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.modal-stat-value { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+
+.modal-trade-btn {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #00e5c3, #00b8d9);
+  color: #0a0e1a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s, transform 0.15s;
+  align-self: center;
+}
+
+.modal-trade-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .header-inner { height: 56px; }
+  .brand-title { font-size: 1rem; }
+  .last-updated { display: none; }
+  .market-grid { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; }
+  .filter-input, .filter-select { min-width: unset; width: 100%; }
+  .modal-panel { border-radius: 14px; }
+  .modal-header, .modal-chart-area, .modal-outcomes-table, .modal-stats { padding-left: 16px; padding-right: 16px; }
+  .modal-prob { font-size: 1.3rem; }
+}
+
+/* ── Load More ────────────────────────────────────────────── */
+.load-more-container { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 2.5rem 1rem 3rem; }
+.load-more-track { width: 320px; max-width: 100%; height: 4px; background: rgba(255, 255, 255, 0.08); border-radius: 99px; overflow: hidden; }
+.load-more-progress { height: 100%; background: linear-gradient(90deg, #00e5c3, #2E75B6); border-radius: 99px; transition: width 0.4s ease; }
+.load-more-count { font-size: 0.78rem; color: #64748b; margin: 0; letter-spacing: 0.02em; }
+
+.load-more-btn {
+  padding: 0.65rem 2rem;
+  background: transparent;
+  color: #00e5c3;
+  border: 1px solid rgba(0, 229, 195, 0.35);
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.load-more-btn:hover:not(:disabled) { background: rgba(0, 229, 195, 0.1); border-color: #00e5c3; }
+.load-more-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinner-sm {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0, 229, 195, 0.3);
+  border-top-color: #00e5c3;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
