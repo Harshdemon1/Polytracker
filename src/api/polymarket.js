@@ -22,20 +22,17 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
         active: true,
         closed: false,
         archived: false,
-        order: 'volume_24hr',
-        ascending: false,
     };
 
     if (volumeMin > 0) {
         params.volume_num_min = volumeMin;
     }
 
-    // Use /events endpoint — it returns events with nested markets,
-    // and supports correct sorting by volume_24hr (Trending tab)
+    // Use /events endpoint — returns curated events with nested markets
     const { data } = await client.get('/events', { params });
     const events = Array.isArray(data) ? data : (data?.data ?? []);
 
-    // Flatten: extract all markets from all events
+    // Flatten events → markets
     const markets = [];
     for (const event of events) {
         const eventMarkets = Array.isArray(event.markets) ? event.markets : [];
@@ -68,7 +65,8 @@ export async function fetchMarkets({ limit = 100, offset = 0, volumeMin = 0 } = 
             priceChange1d: m.oneDayPriceChange ?? null,
             priceChange1h: m.oneHourPriceChange ?? null,
             lastTradePrice: m.lastTradePrice ?? null,
-        }));
+        }))
+        .sort((a, b) => b.volume - a.volume);
 }
 
 function parseClobTokenIds(market) {
@@ -93,11 +91,7 @@ export async function fetchPriceHistory(tokenId, fidelity = 60) {
     if (!tokenId) return [];
     try {
         const { data } = await clobClient.get('/prices-history', {
-            params: {
-                market: tokenId,
-                interval: 'max',
-                fidelity,
-            }
+            params: { market: tokenId, interval: 'max', fidelity }
         });
         const history = data?.history ?? data ?? [];
         return Array.isArray(history) ? history : [];
