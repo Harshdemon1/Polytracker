@@ -2,7 +2,7 @@
 
 **Live prediction market tracker built on [Polymarket](https://polymarket.com) data.**
 
-🌐 [polytracker.co.in](https://polytracker.co.in)
+[polytracker.co.in](https://polytracker.co.in)
 
 ---
 
