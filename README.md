@@ -14,20 +14,20 @@ Polytracker is a real-time dashboard that lets you browse, filter, and track pre
 
 ## Features
 
-- 🔴 **Live market data** — auto-refreshes every 60 seconds from the Polymarket API
-- 📈 **Sparkline charts** — see price movement at a glance on every market card
-- 🔍 **Filters** — filter by category, sort by volume or end date, and set a minimum volume threshold
-- ⭐ **Watchlist** — star markets to save them and filter to your watchlist
-- 📊 **Market modal** — click any market for a detailed view with full price history chart and outcome breakdown
-- 🌙 **Dark / Light mode** — theme toggle with preference saved locally
-- ⚡ **Fast** — loads 1000+ markets in the background in chunks
+-  Live market data — auto-refreshes every 60 seconds from the Polymarket API
+-  Sparkline charts — see price movement at a glance on every market card
+-  Filters — filter by category, sort by volume or end date, and set a minimum volume threshold
+-  Watchlist — star markets to save them and filter to your watchlist
+-  Market modal — click any market for a detailed view with full price history chart and outcome breakdown
+-  Dark / Light mode — theme toggle with preference saved locally
+-  Fast — loads 1000+ markets in the background in chunks
 
 ---
 
-## Tech Stack
+ Tech Stack
 
-- **React + Vite** — frontend framework and build tool
-- **Recharts** — price history and sparkline charts
-- **Polymarket Gamma API** — market data (questions, outcomes, volume, liquidity)
-- **Polymarket CLOB API** — price history for charts
-- **Vercel** — hosting and deployment
+- React + Vite — frontend framework and build tool
+- Recharts — price history and sparkline charts
+- Polymarket Gamma API — market data (questions, outcomes, volume, liquidity)
+- Polymarket CLOB API — price history for charts
+- Vercel — hosting and deployment
